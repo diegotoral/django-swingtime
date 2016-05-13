@@ -34,7 +34,7 @@ class Note(models.Model):
     content_type = models.ForeignKey(ContentType, verbose_name=_('content type'))
     object_id = models.PositiveIntegerField(_('object id'))
     content_object = GenericForeignKey('content_type', 'object_id')
-    
+
     #===========================================================================
     class Meta:
         verbose_name = _('note')
@@ -70,8 +70,9 @@ class Event(models.Model):
     '''
     Container model for general metadata and associated ``Occurrence`` entries.
     '''
-    title = models.CharField(_('title'), max_length=32)
-    description = models.CharField(_('description'), max_length=100)
+    title = models.CharField(_('title'), max_length=100)
+    image = models.ImageField(_('Image'), default='http://placehold.it/350x150')
+    description = models.TextField(_('description'))
     event_type = models.ForeignKey(EventType, verbose_name=_('event type'))
     notes = GenericRelation(Note, verbose_name=_('notes'))
 
@@ -93,16 +94,16 @@ class Event(models.Model):
     #---------------------------------------------------------------------------
     def add_occurrences(self, start_time, end_time, **rrule_params):
         '''
-        Add one or more occurences to the event using a comparable API to 
-        ``dateutil.rrule``. 
-        
+        Add one or more occurences to the event using a comparable API to
+        ``dateutil.rrule``.
+
         If ``rrule_params`` does not contain a ``freq``, one will be defaulted
         to ``rrule.DAILY``.
-        
+
         Because ``rrule.rrule`` returns an iterator that can essentially be
         unbounded, we need to slightly alter the expected behavior here in order
         to enforce a finite number of occurrence creation.
-        
+
         If both ``count`` and ``until`` entries are missing from ``rrule_params``,
         only a single ``Occurrence`` instance will be created using the exact
         ``start_time`` and ``end_time`` values.
@@ -118,7 +119,7 @@ class Event(models.Model):
             for ev in rrule.rrule(dtstart=start_time, **rrule_params):
                 occurrences.append(Occurrence(start_time=ev, end_time=ev + delta, event=self))
             self.occurrence_set.bulk_create(occurrences)
-	    
+
     #---------------------------------------------------------------------------
     def upcoming_occurrences(self):
         '''
@@ -146,18 +147,18 @@ class Event(models.Model):
 
 #===============================================================================
 class OccurrenceManager(models.Manager):
-    
+
     use_for_related_fields = True
-    
+
     #---------------------------------------------------------------------------
     def daily_occurrences(self, dt=None, event=None):
         '''
-        Returns a queryset of for instances that have any overlap with a 
+        Returns a queryset of for instances that have any overlap with a
         particular day.
-        
+
         * ``dt`` may be either a datetime.datetime, datetime.date object, or
           ``None``. If ``None``, default to the current day.
-        
+
         * ``event`` can be an ``Event`` instance for further filtering.
         '''
         dt = dt or datetime.now()
@@ -177,7 +178,7 @@ class OccurrenceManager(models.Manager):
                 end_time__gt=end
             )
         )
-        
+
         return qs.filter(event=event) if event else qs
 
 
@@ -218,7 +219,7 @@ class Occurrence(models.Model):
     @property
     def title(self):
         return self.event.title
-        
+
     #---------------------------------------------------------------------------
     @property
     def event_type(self):
@@ -227,7 +228,7 @@ class Occurrence(models.Model):
 
 #-------------------------------------------------------------------------------
 def create_event(
-    title, 
+    title,
     event_type,
     description='',
     start_time=None,
@@ -236,38 +237,38 @@ def create_event(
     **rrule_params
 ):
     '''
-    Convenience function to create an ``Event``, optionally create an 
+    Convenience function to create an ``Event``, optionally create an
     ``EventType``, and associated ``Occurrence``s. ``Occurrence`` creation
     rules match those for ``Event.add_occurrences``.
-     
+
     Returns the newly created ``Event`` instance.
-    
+
     Parameters
-    
+
     ``event_type``
-        can be either an ``EventType`` object or 2-tuple of ``(abbreviation,label)``, 
+        can be either an ``EventType`` object or 2-tuple of ``(abbreviation,label)``,
         from which an ``EventType`` is either created or retrieved.
-    
-    ``start_time`` 
+
+    ``start_time``
         will default to the current hour if ``None``
-    
-    ``end_time`` 
+
+    ``end_time``
         will default to ``start_time`` plus swingtime_settings.DEFAULT_OCCURRENCE_DURATION
         hour if ``None``
-    
+
     ``freq``, ``count``, ``rrule_params``
         follow the ``dateutils`` API (see http://labix.org/python-dateutil)
-    
+
     '''
-    
+
     if isinstance(event_type, tuple):
         event_type, created = EventType.objects.get_or_create(
             abbr=event_type[0],
             label=event_type[1]
         )
-    
+
     event = Event.objects.create(
-        title=title, 
+        title=title,
         description=description,
         event_type=event_type
     )
@@ -277,10 +278,10 @@ def create_event(
 
     start_time = start_time or datetime.now().replace(
         minute=0,
-        second=0, 
+        second=0,
         microsecond=0
     )
-    
+
     end_time = end_time or (start_time + swingtime_settings.DEFAULT_OCCURRENCE_DURATION)
     event.add_occurrences(start_time, end_time, **rrule_params)
     return event
