@@ -71,7 +71,7 @@ class Event(models.Model):
     Container model for general metadata and associated ``Occurrence`` entries.
     '''
     title = models.CharField(_('title'), max_length=100)
-    image = models.ImageField(_('Image'), default='http://placehold.it/350x150')
+    image = models.ImageField(_('Image'), default='')
     description = models.TextField(_('description'))
     event_type = models.ForeignKey(EventType, verbose_name=_('event type'))
     notes = GenericRelation(Note, verbose_name=_('notes'))
