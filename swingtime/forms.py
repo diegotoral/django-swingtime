@@ -377,7 +377,7 @@ class MultipleOccurrenceForm(forms.Form):
 
         elif params['freq'] != rrule.DAILY:
             raise NotImplementedError(_('Unknown interval rule ' + params['freq']))
-        
+
         return params
 
 
@@ -397,6 +397,7 @@ class EventForm(forms.ModelForm):
     #---------------------------------------------------------------------------
     def __init__(self, *args, **kws):
         super(EventForm, self).__init__(*args, **kws)
+        self.fields['image'].required = False
         self.fields['description'].required = False
 
 
@@ -415,5 +416,3 @@ class SingleOccurrenceForm(forms.ModelForm):
         model = Occurrence
         if FIELDS_REQUIRED:
             fields = "__all__"
-
-
