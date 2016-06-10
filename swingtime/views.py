@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, time
 
 from django import http
 from django.db import models
+from django.template.response import TemplateResponse
 from django.template.context import RequestContext
 from django.shortcuts import get_object_or_404, render
 
@@ -88,7 +89,7 @@ def event_view(
         'event_form': event_form or event_form_class(instance=event),
         'recurrence_form': recurrence_form or recurrence_form_class(initial={'dtstart': datetime.now()})
     }
-    return render(request, template, data)
+    return TemplateResponse(request, template, data)
 
 
 #-------------------------------------------------------------------------------
@@ -330,5 +331,5 @@ def month_view(
         'last_month': dtstart + timedelta(days=-1),
     }
 
-    return render(request, template, data)
+    return TemplateResponse(request, template, data)
 
